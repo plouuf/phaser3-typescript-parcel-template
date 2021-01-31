@@ -45,13 +45,15 @@ export default class PlayerControl {
       })
       .addState("spike-hit", {
         onEnter: this.spikeOnEnter,
-        onUpdate: this.spikeOnUpdate,
       })
       .addState("snowman-hit", {
         onEnter: this.snowmanHitOnEnter,
       })
       .addState("snowman-stomp", {
         onEnter: this.snowmanStompOnEnter,
+      })
+      .addState("dead", {
+        onEnter: this.deadOnEnter,
       })
       .setState("idle");
 
@@ -116,6 +118,16 @@ export default class PlayerControl {
     this.stateMachine.update(dt);
   }
 
+  private setHeath(value: number) {
+
+    this.health = Phaser.Math.Clamp(value, 0, 100);
+    events.emit("health-changed", this.health);
+
+    if (this.health <= 0) { 
+      this.stateMachine.setState("dead")
+    }
+  }
+
   private idleOnEnter() {
     this.sprite.play("penguin-idle");
   }
@@ -146,7 +158,7 @@ export default class PlayerControl {
 
   private jumpOnEnter() {
     this.sprite.play("penguin-jump");
-    this.sprite.setVelocityY(-9);
+    this.sprite.setVelocityY(-10);
   }
 
   private jumpOnUpdate() {
@@ -162,11 +174,8 @@ export default class PlayerControl {
   }
 
   private spikeOnEnter() {
-    this.sprite.setVelocityY(-10);
-    this.health = Phaser.Math.Clamp(this.health - 10, 0, 100);
-
-    events.emit("health-changed", this.health);
-
+    this.sprite.setVelocityY(-12);
+    
     const startColor = Phaser.Display.Color.ValueToColor(0xffffff);
     const endColor = Phaser.Display.Color.ValueToColor(0xff0000);
 
@@ -184,22 +193,20 @@ export default class PlayerControl {
           endColor,
           100,
           value
-        );
-
-        const color = Phaser.Display.Color.GetColor(
-          colorObject.r,
-          colorObject.g,
-          colorObject.b
-        );
-        this.sprite.setTint(color);
-      },
-    });
-  }
-
-  private spikeOnUpdate() {
-    this.stateMachine.setState("idle");
-  }
-
+          );
+          
+          const color = Phaser.Display.Color.GetColor(
+            colorObject.r,
+            colorObject.g,
+            colorObject.b
+            );
+            this.sprite.setTint(color);
+          },
+        });
+        this.stateMachine.setState("idle");
+        this.setHeath(this.health - 10);
+      }
+      
   private snowmanHitOnEnter() {
     if (this.lastSnowman) {
       if (this.sprite.x < this.lastSnowman.x) {
@@ -210,10 +217,7 @@ export default class PlayerControl {
     } else {
       this.sprite.setVelocityY(-15);
     }
-    this.health = Phaser.Math.Clamp(this.health - 20, 0, 100);
-
-    events.emit("health-changed", this.health);
-
+    
     const startColor = Phaser.Display.Color.ValueToColor(0xffffff);
     const endColor = Phaser.Display.Color.ValueToColor(0xff0000);
 
@@ -231,25 +235,37 @@ export default class PlayerControl {
           endColor,
           100,
           value
-        );
+          );
+          
+          const color = Phaser.Display.Color.GetColor(
+            colorObject.r,
+            colorObject.g,
+            colorObject.b
+            );
+            this.sprite.setTint(color);
+          },
+        });
+        
+        this.stateMachine.setState("idle");
+        this.setHeath(this.health - 20);
+      }
+      
+      private snowmanStompOnEnter() {
+        this.sprite.setVelocityY(-10);
+        this.stateMachine.setState("idle");
+        
+        events.emit("snowman-stomped", this.lastSnowman);
+      }
 
-        const color = Phaser.Display.Color.GetColor(
-          colorObject.r,
-          colorObject.g,
-          colorObject.b
-        );
-        this.sprite.setTint(color);
-      },
-    });
+  private deadOnEnter() { 
+    this.sprite.play('penguin-die');
 
-    this.stateMachine.setState("idle");
-  }
+    this.sprite.setOnCollide(() => { })
 
-  private snowmanStompOnEnter() {
-    this.sprite.setVelocityY(-10);
-    this.stateMachine.setState("idle");
+    this.scene.time.delayedCall(1300, () => { 
+      this.scene.scene.start('game-over');
+    })
 
-    events.emit("snowman-stomped", this.lastSnowman);
   }
 
   private makePenguinWalk() {
@@ -288,6 +304,17 @@ export default class PlayerControl {
     this.sprite.anims.create({
       key: "penguin-jump",
       frames: [{ key: "penguin", frame: "penguin_jump02.png" }],
+    });
+
+    this.sprite.anims.create({
+      key: "penguin-die",
+      frameRate: 10,
+      frames: this.sprite.anims.generateFrameNames("penguin", {
+        start: 1,
+        end: 4,
+        prefix: "penguin_die0",
+        suffix: ".png",
+      }),
     });
   }
 }
