@@ -1,8 +1,8 @@
 import StateMachine from "./statemachine/StateMachine";
-import { events} from "./EventCenter"
+import { events } from "./EventCenter";
 
 export default class SnowmanControl {
-  private scene: Phaser.Scene
+  private scene: Phaser.Scene;
   private sprite: Phaser.Physics.Matter.Sprite;
   private stateMachine: StateMachine;
   private moveTime = 0;
@@ -29,11 +29,11 @@ export default class SnowmanControl {
       })
       .addState("dead")
       .setState("idle");
-    
-      events.on("snowman-stomped", this.handleStomped, this);
+
+    events.on("snowman-stomped", this.handleStomped, this);
   }
 
-  destroy() { 
+  destroy() {
     events.off("snowman-stomped", this.handleStomped, this);
   }
 
@@ -56,7 +56,7 @@ export default class SnowmanControl {
         suffix: ".png",
       }),
       frameRate: 5,
-      repeat: -1
+      repeat: -1,
     });
 
     this.sprite.anims.create({
@@ -111,21 +111,20 @@ export default class SnowmanControl {
     }
   }
 
-  private handleStomped(snowman: Phaser.Physics.Matter.Sprite) { 
-    if (this.sprite !== snowman) { 
+  private handleStomped(snowman: Phaser.Physics.Matter.Sprite) {
+    if (this.sprite !== snowman) {
       return;
     }
     events.off("snowman-stomped", this.handleStomped, this);
     this.scene.tweens.add({
       targets: this.sprite,
       displayHeight: 0,
-      y: this.sprite.y + (this.sprite.displayHeight * 0.5),
+      y: this.sprite.y + this.sprite.displayHeight * 0.5,
       duration: 100,
-      onComplete: () => { 
-        this.sprite.destroy()
-      }
-
+      onComplete: () => {
+        this.sprite.destroy();
+      },
     });
-    this.stateMachine.setState("dead")
+    this.stateMachine.setState("dead");
   }
 }

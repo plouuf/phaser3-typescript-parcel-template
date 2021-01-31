@@ -51,7 +51,7 @@ export default class PlayerControl {
         onEnter: this.snowmanHitOnEnter,
       })
       .addState("snowman-stomp", {
-        onEnter: this.snowmanStompOnEnter
+        onEnter: this.snowmanStompOnEnter,
       })
       .setState("idle");
 
@@ -70,7 +70,6 @@ export default class PlayerControl {
       if (this.obstacles.is("snowman", bodyB)) {
         this.lastSnowman = bodyB.gameObject;
         if (this.sprite.y < bodyB.position.y) {
-
           //stomp on snowman
           this.stateMachine.setState("snowman-stomp");
         } else {
@@ -201,15 +200,15 @@ export default class PlayerControl {
     this.stateMachine.setState("idle");
   }
 
-  private snowmanHitOnEnter() { 
+  private snowmanHitOnEnter() {
     if (this.lastSnowman) {
       if (this.sprite.x < this.lastSnowman.x) {
-        this.sprite.setVelocityX(-12)
+        this.sprite.setVelocityX(-12);
       } else {
-        this.sprite.setVelocityX(12)
+        this.sprite.setVelocityX(12);
       }
-    } else { 
-      this.sprite.setVelocityY(-15)
+    } else {
+      this.sprite.setVelocityY(-15);
     }
     this.health = Phaser.Math.Clamp(this.health - 20, 0, 100);
 
@@ -243,14 +242,14 @@ export default class PlayerControl {
       },
     });
 
-    this.stateMachine.setState('idle');
+    this.stateMachine.setState("idle");
   }
 
-  private snowmanStompOnEnter() { 
-    this.sprite.setVelocityY(-10)
-    this.stateMachine.setState('idle')
+  private snowmanStompOnEnter() {
+    this.sprite.setVelocityY(-10);
+    this.stateMachine.setState("idle");
 
-    events.emit('snowman-stomped', this.lastSnowman)
+    events.emit("snowman-stomped", this.lastSnowman);
   }
 
   private makePenguinWalk() {

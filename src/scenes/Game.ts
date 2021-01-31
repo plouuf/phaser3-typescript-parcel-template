@@ -20,7 +20,7 @@ export default class Game extends Phaser.Scene {
     this.snowmen = [];
 
     this.events.once(Phaser.Scenes.Events.DESTROY, () => {
-      this.destroy()
+      this.destroy();
     });
   }
 
@@ -73,7 +73,7 @@ export default class Game extends Phaser.Scene {
             .setFixedRotation();
 
           this.snowmen.push(new SnowmanControl(this, snowman));
-          this.obstacles.add('snowman', snowman.body as MatterJS.BodyType)
+          this.obstacles.add("snowman", snowman.body as MatterJS.BodyType);
           break;
         }
 
@@ -119,8 +119,8 @@ export default class Game extends Phaser.Scene {
     });
   }
 
-  destroy() { 
-    this.snowmen.forEach(snowman => snowman.destroy())
+  destroy() {
+    this.snowmen.forEach((snowman) => snowman.destroy());
   }
 
   update(t: number, dt: number) {
