@@ -1,11 +1,14 @@
 import StateMachine from "./statemachine/StateMachine";
+import { events} from "./EventCenter"
 
 export default class SnowmanControl {
+  private scene: Phaser.Scene
   private sprite: Phaser.Physics.Matter.Sprite;
   private stateMachine: StateMachine;
   private moveTime = 0;
 
-  constructor(sprite: Phaser.Physics.Matter.Sprite) {
+  constructor(scene: Phaser.Scene, sprite: Phaser.Physics.Matter.Sprite) {
+    this.scene = scene;
     this.sprite = sprite;
 
     this.createSnowmanAnimation();
@@ -26,6 +29,12 @@ export default class SnowmanControl {
       })
       .addState("dead")
       .setState("idle");
+    
+      events.on("snowman-stomped", this.handleStomped, this);
+  }
+
+  destroy() { 
+    events.off("snowman-stomped", this.handleStomped, this);
   }
 
   update(dt: number) {
@@ -100,5 +109,23 @@ export default class SnowmanControl {
     if (this.moveTime > 2000) {
       this.stateMachine.setState("move-left");
     }
+  }
+
+  private handleStomped(snowman: Phaser.Physics.Matter.Sprite) { 
+    if (this.sprite !== snowman) { 
+      return;
+    }
+    events.off("snowman-stomped", this.handleStomped, this);
+    this.scene.tweens.add({
+      targets: this.sprite,
+      displayHeight: 0,
+      y: this.sprite.y + (this.sprite.displayHeight * 0.5),
+      duration: 100,
+      onComplete: () => { 
+        this.sprite.destroy()
+      }
+
+    });
+    this.stateMachine.setState("dead")
   }
 }

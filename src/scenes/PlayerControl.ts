@@ -13,6 +13,8 @@ export default class PlayerControl {
   private obstacles: ObstaclesController;
   private health = 100;
 
+  private lastSnowman?: Phaser.Physics.Matter.Sprite;
+
   constructor(
     scene: Phaser.Scene,
     sprite: Phaser.Physics.Matter.Sprite,
@@ -45,6 +47,12 @@ export default class PlayerControl {
         onEnter: this.spikeOnEnter,
         onUpdate: this.spikeOnUpdate,
       })
+      .addState("snowman-hit", {
+        onEnter: this.snowmanHitOnEnter,
+      })
+      .addState("snowman-stomp", {
+        onEnter: this.snowmanStompOnEnter
+      })
       .setState("idle");
 
     this.sprite.setOnCollide((data: MatterJS.ICollisionPair) => {
@@ -56,6 +64,19 @@ export default class PlayerControl {
 
       if (this.obstacles.is("spikes", bodyB)) {
         this.stateMachine.setState("spike-hit");
+        return;
+      }
+
+      if (this.obstacles.is("snowman", bodyB)) {
+        this.lastSnowman = bodyB.gameObject;
+        if (this.sprite.y < bodyB.position.y) {
+
+          //stomp on snowman
+          this.stateMachine.setState("snowman-stomp");
+        } else {
+          //hit by snowman
+          this.stateMachine.setState("snowman-hit");
+        }
         return;
       }
 
@@ -178,6 +199,58 @@ export default class PlayerControl {
 
   private spikeOnUpdate() {
     this.stateMachine.setState("idle");
+  }
+
+  private snowmanHitOnEnter() { 
+    if (this.lastSnowman) {
+      if (this.sprite.x < this.lastSnowman.x) {
+        this.sprite.setVelocityX(-12)
+      } else {
+        this.sprite.setVelocityX(12)
+      }
+    } else { 
+      this.sprite.setVelocityY(-15)
+    }
+    this.health = Phaser.Math.Clamp(this.health - 20, 0, 100);
+
+    events.emit("health-changed", this.health);
+
+    const startColor = Phaser.Display.Color.ValueToColor(0xffffff);
+    const endColor = Phaser.Display.Color.ValueToColor(0xff0000);
+
+    this.scene.tweens.addCounter({
+      from: 0,
+      to: 100,
+      duration: 100,
+      repeat: 2,
+      yoyo: true,
+      ease: Phaser.Math.Easing.Sine.InOut,
+      onUpdate: (tween) => {
+        const value = tween.getValue();
+        const colorObject = Phaser.Display.Color.Interpolate.ColorWithColor(
+          startColor,
+          endColor,
+          100,
+          value
+        );
+
+        const color = Phaser.Display.Color.GetColor(
+          colorObject.r,
+          colorObject.g,
+          colorObject.b
+        );
+        this.sprite.setTint(color);
+      },
+    });
+
+    this.stateMachine.setState('idle');
+  }
+
+  private snowmanStompOnEnter() { 
+    this.sprite.setVelocityY(-10)
+    this.stateMachine.setState('idle')
+
+    events.emit('snowman-stomped', this.lastSnowman)
   }
 
   private makePenguinWalk() {

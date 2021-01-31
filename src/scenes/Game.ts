@@ -18,6 +18,10 @@ export default class Game extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = new ObstaclesController();
     this.snowmen = [];
+
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      this.destroy()
+    });
   }
 
   preload() {
@@ -68,7 +72,8 @@ export default class Game extends Phaser.Scene {
             .sprite(x, y, "snowman")
             .setFixedRotation();
 
-          this.snowmen.push(new SnowmanControl(snowman));
+          this.snowmen.push(new SnowmanControl(this, snowman));
+          this.obstacles.add('snowman', snowman.body as MatterJS.BodyType)
           break;
         }
 
@@ -112,6 +117,10 @@ export default class Game extends Phaser.Scene {
         }
       }
     });
+  }
+
+  destroy() { 
+    this.snowmen.forEach(snowman => snowman.destroy())
   }
 
   update(t: number, dt: number) {
